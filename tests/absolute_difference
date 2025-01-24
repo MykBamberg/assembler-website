@@ -1,0 +1,17 @@
+    inp
+    str $a
+    inp
+    str $b
+    lod $a
+    sub $b
+    bnn $output
+    lod $b
+    sub $a
+output:
+    out
+    end
+
+a:
+    0x00
+b:
+    0x00

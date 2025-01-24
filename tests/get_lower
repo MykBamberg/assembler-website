@@ -1,0 +1,21 @@
+    inp
+    str $a
+    inp
+    str $b
+
+    sub $a
+    bnn $a_larger
+    lod $b
+    bch $output
+
+a_larger:
+    lod $a
+
+output:
+    out
+    end
+
+a:
+    0x0
+b:
+    0x0

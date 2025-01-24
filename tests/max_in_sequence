@@ -1,0 +1,26 @@
+max:
+    inp
+current:
+    str $max
+
+read_loop:
+    inp
+    str $current
+    biz $finish
+
+    sub $max
+    bnn $new_max
+
+continue:
+    lod $current
+    bch $read_loop
+
+new_max:
+    lod $current
+    str $max
+    bch $continue
+
+finish:
+    lod $max
+    out
+    end

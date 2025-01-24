@@ -1,0 +1,29 @@
+; get and store inputs
+numerator:
+    inp
+denominator:
+    str $numerator
+    inp
+    str $denominator
+
+; repeatedly subtract denominator from numerator until result is negative
+; loop count equals quotient
+loop:
+    lod $numerator
+    sub $denominator
+    str $numerator
+    bnn $continue
+
+; output and end program
+    lod $quotient
+    out
+one:
+    0x1 ; also acts as `end`
+continue:
+    lod $quotient
+    add $one
+    str $quotient
+    bch $loop
+
+quotient:
+    0x0

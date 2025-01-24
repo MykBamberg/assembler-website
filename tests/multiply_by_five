@@ -1,0 +1,21 @@
+    inp
+    str $a
+loop:
+    lod $out
+    add $a
+    str $out
+    lod $b
+    sub $one
+    biz $end
+    str $b
+    bch $loop
+end:
+    end
+one:
+    0x1
+a:
+    0x0
+b:
+    0x5
+out:
+    0x0

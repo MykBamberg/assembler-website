@@ -1,0 +1,16 @@
+loop:
+    lod $result
+    add $odd_num
+    out
+    str $result
+    lod $odd_num
+    add $two
+    str $odd_num
+    bch $loop
+
+two:
+    0x2
+result:
+    0x0
+odd_num:
+    0x1
