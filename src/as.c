@@ -19,6 +19,16 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <emscripten.h>
+
+constexpr size_t MAX_ERROR_LENGTH = 8192;
+
+static char error_buf[MAX_ERROR_LENGTH + 1] = {};
+
+#define error(...) {\
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
+    snprintf(error_buf + strlen(error_buf), remaining, __VA_ARGS__);\
+}
 
 constexpr uint8_t ERROR_ADDRESS = 255;
 constexpr size_t MAX_LABEL_NAME_LENGTH = 64;
@@ -31,7 +41,11 @@ typedef struct {
     uint8_t address;
 } label;
 
-uint8_t get_label_address(size_t label_count, label labels[static label_count], const char* name) {
+[[gnu::weak]] char* strchrnul(const char *s, int c) {
+    return strchr(s, c) ?: (char*)s + strlen(s);
+}
+
+static uint8_t get_label_address(size_t label_count, label labels[static label_count], const char* name) {
     for (size_t i = 0; i < label_count; i++) {
         if (strncmp(labels[i].name, name, MAX_LABEL_NAME_LENGTH) == 0) {
             return labels[i].address;
@@ -39,12 +53,12 @@ uint8_t get_label_address(size_t label_count, label labels[static label_count], 
     }
 
     if (*name != '\0') {
-        fprintf(stderr, "Cannot find label, defaulting to address `0'\n");
+        error("Cannot find label, defaulting to address `0'\n");
     }
     return ERROR_ADDRESS;
 }
 
-void get_label(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
+static void get_label(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     /* Remove leading white-space */
     while (*str == ' ') str++;
     *strchr(str, ':') = '\0';
@@ -53,7 +67,7 @@ void get_label(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     strncpy(label, str, MAX_LABEL_NAME_LENGTH);
 }
 
-bool string_empty(const char* str) {
+static bool string_empty(const char* str) {
     while (*str != '\0' && *str != '\n') {
         if (*str != ' ') {
             return false;
@@ -63,7 +77,7 @@ bool string_empty(const char* str) {
     return true;
 }
 
-bool is_num(const char* str) {
+static bool is_num(const char* str) {
     while (*str != '\0' && *str != '\n') {
         if (*str != ' ') {
             if (*str == '0' && *(str + 1) == 'x') {
@@ -76,7 +90,7 @@ bool is_num(const char* str) {
     return false;
 }
 
-int8_t hex_value(char c) {
+static int8_t hex_value(char c) {
     switch (c) {
         case '0' ... '9':
             return (int8_t)(c - '0');
@@ -89,12 +103,12 @@ int8_t hex_value(char c) {
     }
 }
 
-uint8_t parse_num(const char* str) {
+static uint8_t parse_num(const char* str) {
     const char* num_start = strchr(str, 'x') + 1;
     int8_t a = hex_value(*num_start);
 
     if (a < 0) {
-        fprintf(stderr, "Cannot parse number literal, defaulting to 0\n");
+        error("Cannot parse number literal, defaulting to 0\n");
         return 0;
     }
 
@@ -106,7 +120,7 @@ uint8_t parse_num(const char* str) {
     return (uint8_t)(16 * a + b);
 }
 
-uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
+static uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     /* Remove leading white-space */
     while (*str == ' ') str++;
     /* Remove newline */
@@ -156,27 +170,19 @@ uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     }
 
 parse_error:
-    fprintf(stderr, "Cannot decode instruction, defaulting to `end'\n");
+    error("Cannot decode instruction, defaulting to `end'\n");
     label[0] = '\0';
     return 0b00000000;
 }
 
-int main(int argc, char* argv[argc]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s [FILE]\n", argv[0]);
-        return 1;
-    }
+[[gnu::used]] char* get_error_buf(void) {
+    return error_buf;
+}
 
-    const char* source_path = argv[1];
-    if (strcmp(source_path, "-") == 0) {
-        source_path = "/dev/stdin";
-    }
-
-    FILE* source_file = fopen(source_path, "r");
-    if (source_file == NULL) {
-        fprintf(stderr, "Cannot open file '%s'\n", source_path);
-        return 1;
-    }
+[[gnu::used]] char* assemble(const char* source) {
+    static char return_text[3 * RAM_SIZE + 1] = {};
+    return_text[0] = '\0';
+    error_buf[0] = '\0';
 
     uint8_t program[RAM_SIZE] = {};
     uint8_t address = 0;
@@ -185,46 +191,55 @@ int main(int argc, char* argv[argc]) {
     size_t label_count = 0;
     char parameters[LABEL_COUNT][MAX_LABEL_NAME_LENGTH + 1] = {};
 
-    char* line = NULL;
-    size_t line_length = 0;
+    char* source_dup = strdup(source);
+    char* line = source_dup;
+    char* next_line = NULL;
 
-    while (getline(&line, &line_length, source_file) != -1) {
+    while (line) {
+        if ((next_line = strchr(line, '\n'))) {
+            *next_line = '\0';
+            next_line += 1;
+        }
+
         /* Remove comments */
         *strchrnul(line, ';') = '\0';
         /* Skip empty lines */
         if (string_empty(line)) {
-            continue;
+            goto end_loop;
         }
         /* Add labels to label array */
         else if (strchr(line, ':') != NULL) {
             if (label_count >= LABEL_COUNT) {
-                fprintf(stderr, "Error: out of labels");
+                error("Error: out of labels\n");
                 goto abort;
             }
 
             get_label(line, labels[label_count].name);
             labels[label_count].address = address;
 
-            fprintf(stderr, "label %zu: %s -> %u\n", label_count, labels[label_count].name, labels[label_count].address);
+            error("label %zu: %s -> %u\n", label_count, labels[label_count].name, labels[label_count].address);
             label_count++;
         }
         /* Add number literals */
         else if (is_num(line)) {
             program[address] = parse_num(line);
-            fprintf(stderr, "address %u - number literal: %u\n", address, program[address]);
+            error("address %u - number literal: %u\n", address, program[address]);
             address++;
         }
         /* Parse commands */
         else {
             program[address] = get_cmd(line, parameters[address]);
-            fprintf(stderr, "address %u - command\n", address);
+            error("address %u - command\n", address);
             address++;
         }
 
         if (address > RAM_SIZE) {
-            fprintf(stderr, "Error: out of RAM");
+            error("Error: out of RAM\n");
             goto abort;
         }
+
+    end_loop:
+        line = next_line;
     }
 
     /* Add addresses in place of labels */
@@ -235,15 +250,11 @@ int main(int argc, char* argv[argc]) {
         }
     }
 
-    /* Print RAM content */
     for (size_t i = 0; i < RAM_SIZE; i++) {
-        printf("%02x ", program[i]);
+        sprintf(return_text + 3 * i, "%02x ", program[i]);
     }
-    printf("\n");
 
 abort:
-    free(line);
-    fclose(source_file);
-
-    return 0;
+    free(source_dup);
+    return return_text;
 }

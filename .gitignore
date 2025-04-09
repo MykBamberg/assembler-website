@@ -1,4 +1,3 @@
-bin
-build
-compile_commands.json
-.cache
+/web
+/compile_commands.json
+/.cache
