@@ -3,10 +3,59 @@
     <head>
         <meta charset="utf-8">
         <title>Assembler</title>
-    </head>
-    <body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ace.min.js" integrity="sha512-WgH9t1qfGMsgkGm6j8zrhj8UHqry1q+guPAJPGqIeWAVjs9/JsSUwAzdOLGvckuF+cbGie2XUYEKhCNybk5dTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/keybinding-vim.min.js" integrity="sha512-0GK45OEsRSdhy9Gs16CE1aufzMtn7NI3uRZvvyA3Lg+0LwB92pluTEpBrvxE1bYojIdrIz9BEXi07JpPmCxIWg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/theme-tomorrow_night.min.js" integrity="sha512-wkwPfxmQrrav9ss3Wsxyo0JEkESeFvrn2oA2Z4btNlR2j5wOrSwbk7BV7kYRzQb1f82tf2HYMS76kDTvubbjNw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/theme-tomorrow.min.js" integrity="sha512-EBZaRQZt28witqwUjBmpIa+umnD8bYrY19LXCu8sHbreQB/eNJqHV0cSYAezsWdVsazdMLxhP/uxP2qLUuBeAQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
         <script src="as.js"></script>
         <script src="index.js"></script>
-        <p id="output"></p>
+        <script src="asm-mode.js"></script>
+
+        <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
+    </head>
+    <body>
+        <div class="box">
+            <h1>Assembler</h1>
+            <div class="editor-bar">
+                <select id="example-selection"></select>
+                <button id="example-load"><i class="fa-solid fa-arrow-right"></i> Load</button>
+                <button id="share-code"><i class="fa-regular fa-copy"></i> Share</button>
+                <button id="toggle-vim"><i class="fa-regular fa-keyboard"></i> Default</button>
+            </div>
+            <div id="editor"></div>
+            <div id="copy-label"><p><i class="fa-regular fa-copy"></i> Copied URL</p></div>
+        </div>
+        <div class="box">
+            <h2>Instructions</h2>
+            <table>
+                <thead>
+                    <tr><th>Mnemonic</th><th>Description</th><th>Operand</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>end</td><td>End program</td><td>None</td></tr>
+                    <tr><td>add</td><td>Addition</td><td>Address</td></tr>
+                    <tr><td>sub</td><td>Subtraction</td><td>Address</td></tr>
+                    <tr><td>str</td><td>Store</td><td>Address</td></tr>
+                    <tr><td>lod</td><td>Load</td><td>Address</td></tr>
+                    <tr><td>bch</td><td>Branch</td><td>Address</td></tr>
+                    <tr><td>biz</td><td>Branch if zero</td><td>Address</td></tr>
+                    <tr><td>bnn</td><td>Branch if non-negative</td><td>Address</td></tr>
+                    <tr><td>inp</td><td>Input</td><td>None</td></tr>
+                    <tr><td>out</td><td>Output</td><td>None</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="box hidden" id="output-box">
+            <h2>Assembler Output</h2>
+            <p id="asm-output"></p>
+            <a id="simulator-link" target="_blank"><i class="fa fa-share"></i> Run in simulator</a>
+        </div>
+        <div class="box">
+            <h2>Assembler Log</h2>
+            <p id="error-output"></p>
+        </div>
     </body>
 </html>

@@ -25,9 +25,19 @@ constexpr size_t MAX_ERROR_LENGTH = 8192;
 
 static char error_buf[MAX_ERROR_LENGTH + 1] = {};
 
-#define error(...) {\
+#define error(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining, __VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining, "<span class=\"error\">" template "</span><br>", ##__VA_ARGS__);\
+}
+
+#define warn(template, ...) {\
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<span class=\"warn\">" template "</span><br>", ##__VA_ARGS__);\
+}
+
+#define info(template, ...) {\
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<span class=\"info\">" template "</span><br>", ##__VA_ARGS__);\
 }
 
 constexpr uint8_t ERROR_ADDRESS = 255;
@@ -53,7 +63,7 @@ static uint8_t get_label_address(size_t label_count, label labels[static label_c
     }
 
     if (*name != '\0') {
-        error("Cannot find label, defaulting to address `0'\n");
+        warn("Cannot find label, defaulting to address `0'\n");
     }
     return ERROR_ADDRESS;
 }
@@ -108,7 +118,7 @@ static uint8_t parse_num(const char* str) {
     int8_t a = hex_value(*num_start);
 
     if (a < 0) {
-        error("Cannot parse number literal, defaulting to 0\n");
+        warn("Cannot parse number literal, defaulting to 0\n");
         return 0;
     }
 
@@ -170,7 +180,7 @@ static uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     }
 
 parse_error:
-    error("Cannot decode instruction, defaulting to `end'\n");
+    warn("Cannot decode instruction, defaulting to `end'\n");
     label[0] = '\0';
     return 0b00000000;
 }
@@ -217,19 +227,19 @@ parse_error:
             get_label(line, labels[label_count].name);
             labels[label_count].address = address;
 
-            error("label %zu: %s -> %u\n", label_count, labels[label_count].name, labels[label_count].address);
+            info("label %zu: %s -> %u\n", label_count, labels[label_count].name, labels[label_count].address);
             label_count++;
         }
         /* Add number literals */
         else if (is_num(line)) {
             program[address] = parse_num(line);
-            error("address %u - number literal: %u\n", address, program[address]);
+            info("address %u - number literal: %u\n", address, program[address]);
             address++;
         }
         /* Parse commands */
         else {
             program[address] = get_cmd(line, parameters[address]);
-            error("address %u - command\n", address);
+            info("address %u - command\n", address);
             address++;
         }
 
@@ -255,6 +265,6 @@ parse_error:
     }
 
 abort:
-    free(source_dup);
+    if (source_dup) free(source_dup);
     return return_text;
 }
