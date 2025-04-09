@@ -79,11 +79,11 @@ bool is_num(const char* str) {
 int8_t hex_value(char c) {
     switch (c) {
         case '0' ... '9':
-            return c - '0';
+            return (int8_t)(c - '0');
         case 'a' ... 'f':
-            return c - 'a' + 10;
+            return (int8_t)(c - 'a' + 10);
         case 'A' ... 'F':
-            return c - 'A' + 10;
+            return (int8_t)(c - 'A' + 10);
         default:
             return -1;
     }
@@ -92,17 +92,18 @@ int8_t hex_value(char c) {
 uint8_t parse_num(const char* str) {
     const char* num_start = strchr(str, 'x') + 1;
     int8_t a = hex_value(*num_start);
-    int8_t b = hex_value(*(num_start + 1));
 
-    if (b >= 0) {
-        return (uint8_t)(16 * a + b);
+    if (a < 0) {
+        fprintf(stderr, "Cannot parse number literal, defaulting to 0\n");
+        return 0;
     }
-    if (a >= 0) {
+
+    int8_t b = hex_value(*(num_start + 1));
+    if (b < 0) {
         return (uint8_t)a;
     }
 
-    fprintf(stderr, "Cannot parse number literal, defaulting to 0\n");
-    return 0;
+    return (uint8_t)(16 * a + b);
 }
 
 uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
