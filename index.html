@@ -17,56 +17,63 @@
         <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
     </head>
     <body>
-        <div class="box">
-            <h1>Assembler</h1>
-            <div class="editor-bar">
-                <select id="example-selection"></select>
-                <button id="example-load"><i class="fa-solid fa-arrow-right"></i> Load</button>
-                <button id="share-code"><i class="fa-regular fa-copy"></i> Share</button>
-                <button id="toggle-vim"><i class="fa-regular fa-keyboard"></i> Default</button>
+        <h1>Assembler</h1>
+        <div class="container">
+            <div class="box">
+                <div class="editor-bar">
+                    <select id="example-selection"></select>
+                    <button id="example-load"><i class="fa-solid fa-arrow-right"></i> Load</button>
+                    <button id="share-code"><i class="fa-regular fa-copy"></i> Share</button>
+                    <button id="toggle-vim"><i class="fa-regular fa-keyboard"></i> Default</button>
+                </div>
+                <div id="editor"></div>
+                <div id="copy-label"><p><i class="fa-regular fa-copy"></i> Copied URL</p></div>
             </div>
-            <div id="editor"></div>
-            <div id="copy-label"><p><i class="fa-regular fa-copy"></i> Copied URL</p></div>
-        </div>
-        <div class="box">
-            <h2>Instructions</h2>
-            <table>
-                <thead>
-                    <tr><th>Mnemonic</th><th>Description</th><th>Operand</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>end</td><td>End program</td><td>None</td></tr>
-                    <tr><td>add</td><td>Addition</td><td>Address</td></tr>
-                    <tr><td>sub</td><td>Subtraction</td><td>Address</td></tr>
-                    <tr><td>str</td><td>Store</td><td>Address</td></tr>
-                    <tr><td>lod</td><td>Load</td><td>Address</td></tr>
-                    <tr><td>bch</td><td>Branch</td><td>Address</td></tr>
-                    <tr><td>biz</td><td>Branch if zero</td><td>Address</td></tr>
-                    <tr><td>bnn</td><td>Branch if non-negative</td><td>Address</td></tr>
-                    <tr><td>inp</td><td>Input</td><td>None</td></tr>
-                    <tr><td>out</td><td>Output</td><td>None</td></tr>
-                </tbody>
-            </table>
-        </div>
-        <div class="box hidden" id="output-box">
-            <h2>Assembler Output</h2>
-            <p id="asm-output"></p>
-            <a id="simulator-link" target="_blank"><i class="fa fa-share"></i> Run in simulator</a>
-        </div>
-        <div class="box">
-            <h2>Assembler Log</h2>
-            <div>
-                <input type="checkbox" id="show-info" name="show-info" checked>
-                <label for="show-info"><i class="fa-solid fa-info"></i> Info</label>
-                <style id="info-style"></style>
-                <input type="checkbox" id="show-warn" name="show-warn" checked>
-                <label for="show-warn"><i class="fa-solid fa-triangle-exclamation"></i> Warning</label>
-                <style id="warn-style"></style>
-                <input type="checkbox" id="show-error" name="show-error" checked>
-                <label for="show-error"><i class="fa-solid fa-circle-exclamation"></i> Error</label>
-                <style id="error-style"></style>
+            <div class="scroll">
+                <div class="box">
+                    <h2>Instructions</h2>
+                    <details>
+                        <summary>View instruction table</summary>
+                        <table>
+                            <thead>
+                                <tr><th>Mnemonic</th><th>Description</th><th>Operand</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>end</td><td>End program</td><td>None</td></tr>
+                                <tr><td>add</td><td>Addition</td><td>Address</td></tr>
+                                <tr><td>sub</td><td>Subtraction</td><td>Address</td></tr>
+                                <tr><td>str</td><td>Store</td><td>Address</td></tr>
+                                <tr><td>lod</td><td>Load</td><td>Address</td></tr>
+                                <tr><td>bch</td><td>Branch</td><td>Address</td></tr>
+                                <tr><td>biz</td><td>Branch if zero</td><td>Address</td></tr>
+                                <tr><td>bnn</td><td>Branch if non-negative</td><td>Address</td></tr>
+                                <tr><td>inp</td><td>Input</td><td>None</td></tr>
+                                <tr><td>out</td><td>Output</td><td>None</td></tr>
+                            </tbody>
+                        </table>
+                    </details>
+                </div>
+                <div class="box hidden" id="output-box">
+                    <h2>Assembler Output</h2>
+                    <p id="asm-output"></p>
+                    <a id="simulator-link" target="_blank"><i class="fa fa-share"></i> Run in simulator</a>
+                </div>
+                <div class="box">
+                    <h2>Assembler Log</h2>
+                    <div>
+                        <input type="checkbox" id="show-info" name="show-info" checked>
+                        <label for="show-info"><i class="fa-solid fa-info"></i> Info</label>
+                        <style id="info-style"></style>
+                        <input type="checkbox" id="show-warn" name="show-warn" checked>
+                        <label for="show-warn"><i class="fa-solid fa-triangle-exclamation"></i> Warning</label>
+                        <style id="warn-style"></style>
+                        <input type="checkbox" id="show-error" name="show-error" checked>
+                        <label for="show-error"><i class="fa-solid fa-circle-exclamation"></i> Error</label>
+                        <style id="error-style"></style>
+                    </div>
+                    <div id="error-output"></div>
+                </div>
             </div>
-            <div id="error-output"></div>
         </div>
     </body>
 </html>
