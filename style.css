@@ -118,14 +118,17 @@ tr:first-child th:first-child {
 
 .error {
     color: var(--error-color);
+    margin: 0;
 }
 
 .warn {
     color: var(--warn-color);
+    margin: 0;
 }
 
 .info {
     color: var(--info-color);
+    margin: 0;
 }
 
 .ace_comment {

@@ -99,6 +99,18 @@ document.addEventListener('DOMContentLoaded', () => {
             editor.setValue(atob(code_parameter));
         }
     }
+    /* Log toggles */
+    document.querySelectorAll('#show-info,#show-warn,#show-error').forEach((element) => {
+        element.checked = true;
+        element.addEventListener('change', () => {
+            const type = element.id.replace('show-', '');
+            document.getElementById(`${type}-style`).innerText = element.checked ? '' : `
+                .${type} \{
+                    display: none;
+                \}
+            `;
+        });
+    });
 });
 
 const exaples = {

@@ -55,7 +55,18 @@
         </div>
         <div class="box">
             <h2>Assembler Log</h2>
-            <p id="error-output"></p>
+            <div>
+                <input type="checkbox" id="show-info" name="show-info" checked>
+                <label for="show-info"><i class="fa-solid fa-info"></i> Info</label>
+                <style id="info-style"></style>
+                <input type="checkbox" id="show-warn" name="show-warn" checked>
+                <label for="show-warn"><i class="fa-solid fa-triangle-exclamation"></i> Warning</label>
+                <style id="warn-style"></style>
+                <input type="checkbox" id="show-error" name="show-error" checked>
+                <label for="show-error"><i class="fa-solid fa-circle-exclamation"></i> Error</label>
+                <style id="error-style"></style>
+            </div>
+            <div id="error-output"></div>
         </div>
     </body>
 </html>
