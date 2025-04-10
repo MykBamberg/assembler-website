@@ -27,17 +27,17 @@ static char error_buf[MAX_ERROR_LENGTH + 1] = {};
 
 #define error(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining, "<p class=\"error\">" template "</p>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining, "<pre class=\"error\">" template "</pre>", ##__VA_ARGS__);\
 }
 
 #define warn(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<p class=\"warn\">" template "</p>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"warn\">" template "</pre>", ##__VA_ARGS__);\
 }
 
 #define info(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<p class=\"info\">" template "</p>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"info\">" template "</pre>", ##__VA_ARGS__);\
 }
 
 constexpr uint8_t ERROR_ADDRESS = 255;
@@ -63,7 +63,7 @@ static uint8_t get_label_address(size_t label_count, label labels[static label_c
     }
 
     if (*name != '\0') {
-        warn("Cannot find label, defaulting to address `0'\n");
+        warn("Warning: Cannot find label, defaulting to address `0'\n");
     }
     return ERROR_ADDRESS;
 }
@@ -118,7 +118,7 @@ static uint8_t parse_num(const char* str) {
     int8_t a = hex_value(*num_start);
 
     if (a < 0) {
-        warn("Cannot parse number literal, defaulting to 0\n");
+        warn("Warning: Cannot parse number literal, defaulting to 0\n");
         return 0;
     }
 
@@ -180,7 +180,7 @@ static uint8_t get_cmd(char* str, char label[static MAX_LABEL_NAME_LENGTH]) {
     }
 
 parse_error:
-    warn("Cannot decode instruction, defaulting to `end'\n");
+    warn("Warning: Cannot decode instruction `%3s', defaulting to `end'\n", str);
     label[0] = '\0';
     return 0b00000000;
 }
@@ -227,19 +227,19 @@ parse_error:
             get_label(line, labels[label_count].name);
             labels[label_count].address = address;
 
-            info("label %zu: %s -> %u\n", label_count, labels[label_count].name, labels[label_count].address);
+            info("Label   %2zu: `%s' (address %u)\n", label_count, labels[label_count].name, labels[label_count].address);
             label_count++;
         }
         /* Add number literals */
         else if (is_num(line)) {
             program[address] = parse_num(line);
-            info("address %u - number literal: %u\n", address, program[address]);
+            info("Address %2u: number literal: %u\n", address, program[address]);
             address++;
         }
         /* Parse commands */
         else {
             program[address] = get_cmd(line, parameters[address]);
-            info("address %u - command\n", address);
+            info("Address %2u: command\n", address);
             address++;
         }
 
