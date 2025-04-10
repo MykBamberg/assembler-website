@@ -27,17 +27,17 @@ static char error_buf[MAX_ERROR_LENGTH + 1] = {};
 
 #define error(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining, "<span class=\"error\">" template "</span><br>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining, "<p class=\"error\">" template "</p>", ##__VA_ARGS__);\
 }
 
 #define warn(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<span class=\"warn\">" template "</span><br>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<p class=\"warn\">" template "</p>", ##__VA_ARGS__);\
 }
 
 #define info(template, ...) {\
     size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<span class=\"info\">" template "</span><br>", ##__VA_ARGS__);\
+    snprintf(error_buf + strlen(error_buf), remaining,"<p class=\"info\">" template "</p>", ##__VA_ARGS__);\
 }
 
 constexpr uint8_t ERROR_ADDRESS = 255;
