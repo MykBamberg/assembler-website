@@ -73,7 +73,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Share button */
     const share_code_button = document.getElementById('share-code');
     share_code_button.addEventListener('click', async () => {
-        await navigator.clipboard.writeText(new URL(`?code=${btoa(editor.getValue())}`, window.location).href);
+        await navigator.clipboard.writeText(new URL(`?code=${
+                btoa(editor.getValue()).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+            }`, window.location).href);
 
         /* Show label */
         const label = document.getElementById('copy-label');
@@ -96,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const code_parameter = new URLSearchParams(window.location.search).get('code');
     if (code_parameter) {
         Module.onRuntimeInitialized = () => {
-            editor.setValue(atob(code_parameter));
+            editor.setValue(atob(code_parameter.replace(/-/g, '+').replace(/_/g, '/')));
         }
     }
     /* Log toggles */
