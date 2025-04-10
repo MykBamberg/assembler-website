@@ -35,6 +35,9 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-size: 12pt;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: calc(100svh - 1rem);
 }
 
 h1,h2 {
@@ -152,32 +155,34 @@ tr:first-child th:first-child {
 }
 
 .box {
-    width: 50%;
-    float: left;
     display: flex;
     flex-direction: column;
+    padding: 0.5rem;
 }
 
-.box:first-child {
-    height: 100svh;
+.container {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    overflow: hidden;
+    height: 100%;
 }
 
-.box:nth-child(n+2) {
-    width: calc(50% - 1rem);
-    margin-left: 1rem;
+.scroll {
+    overflow-y: auto;
+    height: 100%;
 }
 
 @media (max-width: 1200px) {
-    .box {
-        width: 100%;
-        float: none;
+    .container {
+        grid-template-columns: 100%;
     }
-    .box:first-child {
-        height: 50vh;
+
+    #editor {
+        min-height: 70svh;
     }
-    .box:nth-child(n+2) {
-        width: 100%;
-        margin-left: 0;
+
+    body {
+        height: fit-content;
     }
 }
 
@@ -189,7 +194,8 @@ tr:first-child th:first-child {
     flex: 1;
 }
 
-#asm-output {
+.ace_dialog input, #asm-output {
+    font-family: 'Roboto Mono', monospace;
     font-size: 16pt;
 }
 
