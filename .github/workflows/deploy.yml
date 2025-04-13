@@ -9,15 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install emscripten
-        run: |
-          git clone https://github.com/emscripten-core/emsdk.git
-          cd emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.4
+          actions-cache-folder: 'emsdk-cache'
+      - name: Verify emscripten installation
+        run: emcc -v
       - name: Build
-        run: |
-          source ./emsdk/emsdk_env.sh
-          ./build.sh
+        run: ./build.sh
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
         with:
