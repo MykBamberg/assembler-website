@@ -67,14 +67,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const example_selection = document.getElementById('example-selection');
     const example_load_button = document.getElementById('example-load');
 
-    Object.keys(exaples).forEach((name) => {
+    Object.keys(examples).forEach((name) => {
         const option = document.createElement('option');
         option.value = option.innerText = name;
         example_selection.appendChild(option);
     });
 
     example_load_button.addEventListener('click', () => {
-        editor.setValue(exaples[example_selection.value]);
+        editor.setValue(examples[example_selection.value]);
     });
 
     /* Toggle input mode */
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-const exaples = {
+const examples = {
     "Absolute Difference" : `\
     inp
     str $a

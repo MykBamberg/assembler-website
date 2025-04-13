@@ -38,7 +38,7 @@ if (ENVIRONMENT_IS_NODE) {
 // we collect those properties and reapply _after_ we configure
 // the current environment's defaults to avoid having to be so
 // defensive during initialization.
-var moduleOverrides = {...Module};
+var moduleOverrides = Object.assign({}, Module);
 
 var arguments_ = [];
 var thisProgram = './this.program';
@@ -484,11 +484,8 @@ function unexportedRuntimeSymbol(sym) {
   }
 }
 
-var runtimeDebug = true; // Switch to false at runtime to disable logging at the right times
-
 // Used by XXXXX_DEBUG settings to output debug messages.
 function dbg(...args) {
-  if (!runtimeDebug && typeof runtimeDebug != 'undefined') return;
   // TODO(sbc): Make this configurable somehow.  Its not always convenient for
   // logging to show up as warnings.
   console.warn(...args);
@@ -702,7 +699,6 @@ function createExportWrapper(name, nargs) {
 }
 
 var wasmBinaryFile;
-
 function findWasmBinary() {
     return locateFile('as.wasm');
 }
@@ -845,14 +841,14 @@ async function createWasm() {
   }
 
   wasmBinaryFile ??= findWasmBinary();
+
     var result = await instantiateAsync(wasmBinary, wasmBinaryFile, info);
     var exports = receiveInstantiationResult(result);
     return exports;
 }
 
+// === Body ===
 // end include: preamble.js
-
-// Begin JS library code
 
 
   class ExitStatus {
@@ -942,6 +938,14 @@ async function createWasm() {
   var __abort_js = () =>
       abort('native code called abort()');
 
+  var getHeapMax = () =>
+      HEAPU8.length;
+  
+  var alignMemory = (size, alignment) => {
+      assert(alignment, "alignment argument is required");
+      return Math.ceil(size / alignment) * alignment;
+    };
+  
   var abortOnCannotGrowMemory = (requestedSize) => {
       abort(`Cannot enlarge memory arrays to size ${requestedSize} bytes (OOM). Either (1) compile with -sINITIAL_MEMORY=X with X higher than the current value ${HEAP8.length}, (2) compile with -sALLOW_MEMORY_GROWTH which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with -sABORTING_MALLOC=0`);
     };
@@ -1043,7 +1047,7 @@ async function createWasm() {
   function _fd_seek(fd, offset, whence, newOffset) {
     offset = bigintToI53Checked(offset);
   
-  
+    
       return 70;
     ;
   }
@@ -1238,6 +1242,7 @@ async function createWasm() {
     };
 
   
+  
     /**
      * @param {string=} returnType
      * @param {Array=} argTypes
@@ -1247,8 +1252,6 @@ async function createWasm() {
       return (...args) => ccall(ident, returnType, argTypes, args, opts);
     };
 
-
-// End JS library code
 
 function checkIncomingModuleAPI() {
   ignoredModuleProp('fetchSettings');
@@ -1303,7 +1306,6 @@ var missingLibrarySymbols = [
   'setTempRet0',
   'zeroMemory',
   'exitJS',
-  'getHeapMax',
   'growMemory',
   'strError',
   'inetPton4',
@@ -1328,7 +1330,6 @@ var missingLibrarySymbols = [
   'maybeExit',
   'asmjsMangle',
   'asyncLoad',
-  'alignMemory',
   'mmapAlloc',
   'HandleAllocator',
   'getNativeTypeSize',
@@ -1469,6 +1470,7 @@ var missingLibrarySymbols = [
   'allocate',
   'writeStringToMemory',
   'writeAsciiToMemory',
+  'setErrNo',
   'demangle',
   'stackTrace',
 ];
@@ -1493,6 +1495,7 @@ var unexportedSymbols = [
   'stackRestore',
   'stackAlloc',
   'ptrToString',
+  'getHeapMax',
   'abortOnCannotGrowMemory',
   'ENV',
   'ERRNO_CODES',
@@ -1503,6 +1506,7 @@ var unexportedSymbols = [
   'warnOnce',
   'readEmAsmArgsArray',
   'jstoi_s',
+  'alignMemory',
   'wasmTable',
   'noExitRuntime',
   'addOnPreRun',
