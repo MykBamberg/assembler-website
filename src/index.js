@@ -134,15 +134,38 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const examples = {
+    "Addition" : `\
+; Addition
+
+    ; get and store user input
+    inp
+    str $a
+    inp
+    str $b
+
+    ; load memory stored in the address of label $a
+    ; into the ACC register of the processor
+    lod $a
+    ; add value at label $b to ACC
+    add $b
+    ; output value of ACC to the user
+    out
+    end
+a:  ; Allocated memory for user input
+    0x00
+b:
+    0x00`,
     "Absolute Difference" : `\
+; Absolute difference
+
     inp
     str $a
     inp
     str $b
     lod $a
-    sub $b
-    bnn $output
-    lod $b
+    sub $b      ; ACC = a - b
+    bnn $output ; if ACC >= 0; then output ACC
+    lod $b      ; else ACC = b - a
     sub $a
 output:
     out
@@ -153,24 +176,33 @@ a:
 b:
     0x00`,
     "Fibonacci" : `\
+; Fibonacci Sequence
+
+; a(n) = a(n-2) + a(n-1)
+; a(0) = 0
+; a(1) = 1
+
 loop:
-    lod $a
-    add $b
-    str $tmp
+    lod $a    ; a(n)
     out
+    add $b    ; a(n+1)
+    str $tmp  ; a(n+2)
     lod $b
-    str $a
+    str $a    ; a(n+1) -> a(n)
     lod $tmp
-    str $b
-    bch $loop
+    str $b    ; a(n+2) -> a(n+1)
+    lod $a
+    bnn $loop ; break on integer overflow
+    end
 
 tmp:
-    0x0
+    0x00
 a:
-    0x0
+    0x00
 b:
-    0x1`,
+    0x01`,
     "Multiplication" : `\
+; Multiplication by repeated addition
 a:  ; reuse code as storage to fit in RAM
     inp
 b:
@@ -182,7 +214,7 @@ loop:
     add $a
     str $out
 
-    ; decrement b until 0
+    ; decrement $b until 0
     lod $b
     sub $one
     biz $end
@@ -193,13 +225,21 @@ end:
     lod $out
     out
 one:
-    0x1 ; while the proper opcode for \`end\` is 0x0, 0x1 works as a substitute
+    ; 0x01 terminates execution as it shares
+    ; the \`end' opcode
+    0x01
 out:
-    0x0`,
+    0x00`,
     "Square Numbers" : `\
+; Generate square number sequence
+; n^2 = sum_(m=0)^(n-1)2m+1
+
 loop:
     lod $result
     add $odd_num
+    bnn $continue
+    end ; break on integer overflow
+continue:
     out
     str $result
     lod $odd_num
@@ -208,13 +248,16 @@ loop:
     bch $loop
 
 two:
-    0x2
+    0x02
 result:
-    0x0
+    0x00
 odd_num:
-    0x1`,
+    0x01`,
     "Division" : `\
-; get and store inputs
+; Division by repeated subraction
+
+    ; get and store inputs
+    ; reuse code as storage to fit in memory
 numerator:
     inp
 denominator:
@@ -222,19 +265,21 @@ denominator:
     inp
     str $denominator
 
-; repeatedly subtract denominator from numerator until result is negative
-; loop count equals quotient
+    ; repeatedly subtract denominator from numerator until result is negative
+    ; loop count equals quotient
 loop:
     lod $numerator
     sub $denominator
     str $numerator
     bnn $continue
 
-; output and end program
+    ; output and terminate execution
     lod $quotient
     out
 one:
-    0x1 ; also acts as \`end\`
+    ; 0x01 terminates execution as it shares
+    ; the \`end' opcode
+    0x01
 continue:
     lod $quotient
     add $one
@@ -242,5 +287,5 @@ continue:
     bch $loop
 
 quotient:
-    0x0`,
+    0x00`,
 };
