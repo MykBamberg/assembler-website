@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <title>Assembler</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/ace.min.js" integrity="sha512-WgH9t1qfGMsgkGm6j8zrhj8UHqry1q+guPAJPGqIeWAVjs9/JsSUwAzdOLGvckuF+cbGie2XUYEKhCNybk5dTg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/keybinding-vim.min.js" integrity="sha512-0GK45OEsRSdhy9Gs16CE1aufzMtn7NI3uRZvvyA3Lg+0LwB92pluTEpBrvxE1bYojIdrIz9BEXi07JpPmCxIWg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.39.1/theme-tomorrow_night.min.js" integrity="sha512-wkwPfxmQrrav9ss3Wsxyo0JEkESeFvrn2oA2Z4btNlR2j5wOrSwbk7BV7kYRzQb1f82tf2HYMS76kDTvubbjNw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -17,14 +18,33 @@
         <link href="https://fonts.googleapis.com/css?family=Roboto+Mono" rel="stylesheet">
     </head>
     <body>
-        <h1>Assembler</h1>
+        <div class="heading">
+            <h1>Assembler</h1>
+            <div class="heading-links">
+                <a target="_blank" href="https://mykbamberg.github.io/cpu-simulator/">
+                    CPU Simulator <i class="fa fa-share"></i></i>
+                </a>
+                <a target="_blank" href="https://github.com/MykBamberg/assembler-website">
+                    Source Code <i class="fa-brands fa-git-alt"></i>
+                </a>
+            </div>
+        </div>
         <div class="container">
             <div class="box">
                 <div class="editor-bar">
                     <select id="example-selection"></select>
-                    <button id="example-load"><i class="fa-solid fa-arrow-right"></i> Load</button>
-                    <button id="share-code"><i class="fa-regular fa-copy"></i> Share</button>
-                    <button id="toggle-vim"><i class="fa-regular fa-keyboard"></i> Default</button>
+                    <button id="example-load">
+                        <i class="fa-solid fa-arrow-right">
+                        </i><span class="hide-mobile"> Load</span>
+                    </button>
+                    <button id="share-code">
+                        <i class="fa-regular fa-copy">
+                        </i><span class="hide-mobile"> Share</span>
+                    </button>
+                    <button id="toggle-vim">
+                        <i class="fa-regular fa-keyboard">
+                        </i><span class="hide-mobile"> Default</span>
+                    </button>
                 </div>
                 <div id="editor"></div>
                 <div id="copy-label"><p><i class="fa-regular fa-copy"></i> Copied URL</p></div>
