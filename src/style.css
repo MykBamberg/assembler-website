@@ -172,6 +172,19 @@ tr:first-child th:first-child {
     height: 100%;
 }
 
+.heading {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 0.5rem;
+}
+
+.heading-links {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: end;
+}
+
 @media (max-width: 1200px) {
     .container {
         grid-template-columns: 100%;
@@ -211,4 +224,14 @@ tr:first-child th:first-child {
 
 .hidden {
     display: none;
+}
+
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none;
+    }
+
+    .editor-bar {
+        grid-template-columns: 2fr 1fr 1fr;
+    }
 }
