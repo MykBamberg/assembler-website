@@ -230,4 +230,8 @@ tr:first-child th:first-child {
     .hide-mobile {
         display: none;
     }
+
+    .editor-bar {
+        grid-template-columns: 2fr 1fr 1fr;
+    }
 }
