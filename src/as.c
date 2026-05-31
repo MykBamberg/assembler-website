@@ -26,20 +26,20 @@ constexpr size_t MAX_ERROR_LENGTH = 8192;
 
 static char error_buf[MAX_ERROR_LENGTH + 1] = {};
 
-#define error(template, ...) {\
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining, "<pre class=\"error\">" template "</pre>", ##__VA_ARGS__);\
-}
+#define error(template, ...) ({ \
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
+    snprintf(error_buf + strlen(error_buf), remaining, "<pre class=\"error\">" template "</pre>", ##__VA_ARGS__); \
+})
 
-#define warn(template, ...) {\
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"warn\">" template "</pre>", ##__VA_ARGS__);\
-}
+#define warn(template, ...) ({ \
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
+    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"warn\">" template "</pre>", ##__VA_ARGS__); \
+})
 
-#define info(template, ...) {\
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf);\
-    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"info\">" template "</pre>", ##__VA_ARGS__);\
-}
+#define info(template, ...) ({ \
+    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
+    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"info\">" template "</pre>", ##__VA_ARGS__); \
+})
 
 constexpr uint8_t ERROR_ADDRESS = 255;
 constexpr uint8_t ERROR_OPCODE = 255;
@@ -48,34 +48,29 @@ constexpr size_t MAX_LABEL_NAME_LENGTH = 64;
 constexpr size_t RAM_SIZE = 16;
 constexpr size_t LABEL_COUNT = RAM_SIZE;
 
-constexpr char REGEX_LABEL_DEF[] = "^[[:space:]]*([A-Za-z0-9_-]+):[[:space:]]*$";
-constexpr char REGEX_NUM_LITERAL[] = "^[[:space:]]*(0x[0-9A-Fa-f]{1,2})[[:space:]]*$";
-constexpr char REGEX_INSTRUCTION[] = "^[[:space:]]*([A-Za-z]{3})[[:space:]]*(\\$([A-Za-z0-9_-]+))?[[:space:]]*$";
-
 typedef struct {
     char name[MAX_LABEL_NAME_LENGTH + 1];
     uint8_t address;
 } label;
 
-static regex_t regex_label_def = {};
-static regex_t regex_num_literal = {};
-static regex_t regex_instruction = {};
-static bool regex_compiled = false;
+static struct { regex_t label_def; regex_t num_literal; regex_t instruction; bool success; } compile_regex() {
+    static typeof(compile_regex()) result = {};
+    if (result.success) return result;
+    result = (typeof(result)){};
 
-static bool compile_regex(void) {
-    if (regex_compiled) {
-        return true;
-    }
+    constexpr char REGEX_LABEL_DEF[] = "^[[:space:]]*([A-Za-z0-9_-]+):[[:space:]]*$";
+    constexpr char REGEX_NUM_LITERAL[] = "^[[:space:]]*(0x[0-9A-Fa-f]{1,2})[[:space:]]*$";
+    constexpr char REGEX_INSTRUCTION[] = "^[[:space:]]*([A-Za-z]{3})[[:space:]]*(\\$([A-Za-z0-9_-]+))?[[:space:]]*$";
 
-    if (regcomp(&regex_label_def, REGEX_LABEL_DEF, REG_EXTENDED) != 0 ||
-        regcomp(&regex_num_literal, REGEX_NUM_LITERAL, REG_EXTENDED) != 0 ||
-        regcomp(&regex_instruction, REGEX_INSTRUCTION, REG_EXTENDED) != 0) {
+    if (regcomp(&result.label_def, REGEX_LABEL_DEF, REG_EXTENDED) != 0 ||
+        regcomp(&result.num_literal, REGEX_NUM_LITERAL, REG_EXTENDED) != 0 ||
+        regcomp(&result.instruction, REGEX_INSTRUCTION, REG_EXTENDED) != 0) {
         error("Error: failed to compile internal regex patterns\n");
-        return false;
+        return result;
     }
 
-    regex_compiled = true;
-    return true;
+    result.success = true;
+    return result;
 }
 
 static uint8_t get_label_address(size_t label_count, label labels[static label_count], const char* name) {
@@ -154,7 +149,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
     return ERROR_OPCODE;
 }
 
-[[gnu::used]] char* get_error_buf(void) {
+[[gnu::used]] char* get_error_buf() {
     return error_buf;
 }
 
@@ -163,9 +158,8 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
     return_text[0] = '\0';
     error_buf[0] = '\0';
 
-    if (!compile_regex()) {
-        return return_text;
-    }
+    auto regex = compile_regex();
+    if (!regex.success) return return_text;
 
     uint8_t program[RAM_SIZE] = {};
     uint8_t address = 0;
@@ -196,7 +190,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
 
         regmatch_t matches[4] = {};
 
-        if (regexec(&regex_label_def, line, 3, matches, 0) == 0) {
+        if (regexec(&regex.label_def, line, 3, matches, 0) == 0) {
             if (label_count >= LABEL_COUNT) {
                 error("Error: out of labels\n");
                 goto abort;
@@ -206,7 +200,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
             info("Label   %2zu: `%s' (address %u)\n", label_count, labels[label_count].name, address);
             label_count++;
 
-        } else if (regexec(&regex_num_literal, line, 3, matches, 0) == 0) {
+        } else if (regexec(&regex.num_literal, line, 3, matches, 0) == 0) {
             if (address >= RAM_SIZE) {
                 error("Error: out of RAM\n");
                 goto abort;
@@ -217,7 +211,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
             info("Address %2u: number literal: %u\n", address, program[address]);
             address++;
 
-        } else if (regexec(&regex_instruction, line, 4, matches, 0) == 0) {
+        } else if (regexec(&regex.instruction, line, 4, matches, 0) == 0) {
             if (address >= RAM_SIZE) {
                 error("Error: out of RAM\n");
                 goto abort;
