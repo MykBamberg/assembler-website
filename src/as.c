@@ -20,26 +20,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 #include <regex.h>
+#include <stdarg.h>
 #include <emscripten.h>
 
 constexpr size_t MAX_ERROR_LENGTH = 8192;
 
 static char error_buf[MAX_ERROR_LENGTH + 1] = {};
-
-#define error(template, ...) ({ \
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
-    snprintf(error_buf + strlen(error_buf), remaining, "<pre class=\"error\">" template "</pre>", ##__VA_ARGS__); \
-})
-
-#define warn(template, ...) ({ \
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
-    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"warn\">" template "</pre>", ##__VA_ARGS__); \
-})
-
-#define info(template, ...) ({ \
-    size_t remaining = MAX_ERROR_LENGTH - strlen(error_buf); \
-    snprintf(error_buf + strlen(error_buf), remaining,"<pre class=\"info\">" template "</pre>", ##__VA_ARGS__); \
-})
 
 constexpr uint8_t ERROR_ADDRESS = 255;
 constexpr uint8_t ERROR_OPCODE = 255;
@@ -53,6 +39,69 @@ typedef struct {
     uint8_t address;
 } label;
 
+typedef enum {
+    LOG_ERROR,
+    LOG_WARN,
+    LOG_INFO,
+} log_level;
+
+static size_t buffer_space_available(size_t reserved) {
+    auto unavailable = strlen(error_buf) + reserved + 1;
+    return unavailable < MAX_ERROR_LENGTH ? MAX_ERROR_LENGTH - unavailable : 0;
+}
+
+static void append(const char* s) {
+    if (strlen(s) > buffer_space_available(0)) {
+        return;
+    }
+    strcat(error_buf, s);
+}
+
+static void append_escaped(const char* s, size_t reserved) {
+    static const char* const HTML_ESCAPES[256] = {
+        ['&']  = "&amp;",
+        ['<']  = "&lt;",
+        ['>']  = "&gt;",
+        ['"']  = "&quot;",
+        ['\''] = "&#39;",
+    };
+
+    for (; *s; s++) {
+        auto escaped = HTML_ESCAPES[(unsigned char)*s] ?: (char[]){*s, '\0'};
+
+        if (strlen(escaped) > buffer_space_available(reserved)) {
+            return;
+        }
+        strcat(error_buf, escaped);
+    }
+}
+
+[[gnu::format(printf, 2, 3)]] static void log(log_level level, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    char content[MAX_ERROR_LENGTH] = {};
+    vsnprintf(content, sizeof content, fmt, ap);
+    va_end(ap);
+
+    constexpr char PRE_CLOSE[] = "</pre>";
+    static const char *const PRE_OPEN[] = {
+        [LOG_ERROR] = "<pre class=\"error\">",
+        [LOG_WARN]  = "<pre class=\"warn\">",
+        [LOG_INFO]  = "<pre class=\"info\">",
+    };
+
+    auto open = PRE_OPEN[level];
+
+    if (strlen(open) + strlen(PRE_CLOSE) > buffer_space_available(0)) {
+        return;
+    }
+
+    append(open);
+    append_escaped(content, strlen(PRE_CLOSE));
+    append(PRE_CLOSE);
+}
+
 static struct { regex_t label_def; regex_t num_literal; regex_t instruction; bool success; } compile_regex() {
     static typeof(compile_regex()) result = {};
     if (result.success) return result;
@@ -65,7 +114,7 @@ static struct { regex_t label_def; regex_t num_literal; regex_t instruction; boo
     if (regcomp(&result.label_def, REGEX_LABEL_DEF, REG_EXTENDED) != 0 ||
         regcomp(&result.num_literal, REGEX_NUM_LITERAL, REG_EXTENDED) != 0 ||
         regcomp(&result.instruction, REGEX_INSTRUCTION, REG_EXTENDED) != 0) {
-        error("Error: failed to compile internal regex patterns\n");
+        log(LOG_ERROR, "Error: failed to compile internal regex patterns\n");
         return result;
     }
 
@@ -108,7 +157,7 @@ static uint8_t parse_num(const char* hex_str) {
     const char* digits = hex_str + 2;
     int8_t a = hex_value(digits[0]);
     if (a < 0) {
-        warn("Warning: Cannot parse number literal `%s', defaulting to 0\n", hex_str);
+        log(LOG_WARN, "Warning: Cannot parse number literal `%s', defaulting to 0\n", hex_str);
         return 0;
     }
     int8_t b = hex_value(digits[1]);
@@ -170,7 +219,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
 
     char* source_dup = strdup(source);
     if (!source_dup) {
-        error("Error: out of memory\n");
+        log(LOG_ERROR, "Error: out of memory\n");
         return return_text;
     }
 
@@ -192,28 +241,28 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
 
         if (regexec(&regex.label_def, line, 3, matches, 0) == 0) {
             if (label_count >= LABEL_COUNT) {
-                error("Error: out of labels\n");
+                log(LOG_ERROR, "Error: out of labels\n");
                 goto abort;
             }
             regex_copy_match(line, &matches[1], labels[label_count].name, MAX_LABEL_NAME_LENGTH);
             labels[label_count].address = address;
-            info("Label   %2zu: `%s' (address %u)\n", label_count, labels[label_count].name, address);
+            log(LOG_INFO, "Label   %2zu: `%s' (address %u)\n", label_count, labels[label_count].name, address);
             label_count++;
 
         } else if (regexec(&regex.num_literal, line, 3, matches, 0) == 0) {
             if (address >= RAM_SIZE) {
-                error("Error: out of RAM\n");
+                log(LOG_ERROR, "Error: out of RAM\n");
                 goto abort;
             }
             char num_str[8] = {};
             regex_copy_match(line, &matches[1], num_str, sizeof(num_str) - 1);
             program[address] = parse_num(num_str);
-            info("Address %2u: number literal: %u\n", address, program[address]);
+            log(LOG_INFO, "Address %2u: number literal: %u\n", address, program[address]);
             address++;
 
         } else if (regexec(&regex.instruction, line, 4, matches, 0) == 0) {
             if (address >= RAM_SIZE) {
-                error("Error: out of RAM\n");
+                log(LOG_ERROR, "Error: out of RAM\n");
                 goto abort;
             }
 
@@ -222,7 +271,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
 
             uint8_t opcode = opcode_for_mnemonic(mnemonic);
             if (opcode == ERROR_OPCODE) {
-                error("Error: unknown instruction `%s'\n", mnemonic);
+                log(LOG_ERROR, "Error: unknown instruction `%s'\n", mnemonic);
                 goto abort;
             }
 
@@ -233,11 +282,11 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
             }
 
             if ((opcode == 0b10010001 || opcode == 0b10010010) && parameters[address][0] != '\0') {
-                warn("Warning: instruction `%s' takes no operand, ignoring `$%s'\n", mnemonic, parameters[address]);
+                log(LOG_WARN, "Warning: instruction `%s' takes no operand, ignoring `$%s'\n", mnemonic, parameters[address]);
                 parameters[address][0] = '\0';
             }
 
-            info("Address %2u: command `%s'\n", address, mnemonic);
+            log(LOG_INFO, "Address %2u: command `%s'\n", address, mnemonic);
             address++;
 
         } else {
@@ -246,7 +295,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
                 p++;
             }
             if (*p != '\0') {
-                error("Error: cannot parse line: `%s'\n", line);
+                log(LOG_ERROR, "Error: cannot parse line: `%s'\n", line);
                 goto abort;
             }
         }
@@ -260,7 +309,7 @@ static uint8_t opcode_for_mnemonic(const char mnemonic[static 4]) {
         }
         uint8_t label_address = get_label_address(label_count, labels, parameters[i]);
         if (label_address == ERROR_ADDRESS) {
-            error("Error: undefined label `%s'\n", parameters[i]);
+            log(LOG_ERROR, "Error: undefined label `%s'\n", parameters[i]);
             goto abort;
         }
         program[i] += label_address;
